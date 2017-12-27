@@ -1,7 +1,7 @@
 {
   "name": "botyo-bundle-instagram",
-  "version": "2.0.0-alpha.2",
-  "description": "Instagram command for Botyo",
+  "version": "2.0.0-alpha.3",
+  "description": "Instagram Bundle for Botyo",
   "keywords": [
     "botyo",
     "module",
@@ -32,13 +32,13 @@
   "homepage": "https://github.com/ivkos/botyo-bundle-instagram#readme",
   "dependencies": {
     "bluebird": "^3.5.1",
-    "botyo-api": "^2.0.0-alpha.14",
+    "botyo-api": "^2.0.0-alpha.31",
     "find-hashtags": "^1.0.1",
     "instagram-private-api": "^0.6.7",
     "request": "^2.83.0"
   },
   "devDependencies": {
-    "@types/bluebird": "^3.5.18",
+    "@types/bluebird": "^3.5.19",
     "@types/request": "^2.0.9",
     "rimraf": "^2.6.2",
     "typescript": "^2.6.2"

@@ -2,10 +2,10 @@ import { Bundle } from "botyo-api";
 import InstagramSneakPeekFilter from "./modules/InstagramSneakPeekFilter";
 import InstagramCommand from "./modules/InstagramCommand";
 
-const BUNDLE = Bundle.ofModules([
+const BUNDLE = Bundle.ofModules(
     InstagramSneakPeekFilter,
     InstagramCommand
-]);
+);
 
 export {
     InstagramSneakPeekFilter,

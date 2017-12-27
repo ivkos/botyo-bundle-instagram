@@ -1,11 +1,11 @@
-import { CommandModule, Message } from "botyo-api";
+import { AbstractCommandModule, Message } from "botyo-api";
 import InstagramUtils from "../util/InstagramUtils";
 import * as Bluebird from "bluebird";
 
 const Instagram = require('instagram-private-api').V1;
 const findHashtags = require("find-hashtags");
 
-export default class InstagramCommand extends CommandModule
+export default class InstagramCommand extends AbstractCommandModule
 {
     private sessionPromise: Promise<any>;
 

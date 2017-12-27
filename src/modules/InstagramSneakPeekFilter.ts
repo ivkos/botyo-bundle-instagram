@@ -1,4 +1,4 @@
-import { FilterModule, Message } from "botyo-api";
+import { AbstractFilterModule, Message } from "botyo-api";
 import InstagramUtils from "../util/InstagramUtils";
 import * as Bluebird from "bluebird";
 import * as request from "request";
@@ -8,7 +8,7 @@ import { Readable } from "stream";
 
 const Instagram = require('instagram-private-api').V1;
 
-export default class InstagramSneakPeekFilter extends FilterModule
+export default class InstagramSneakPeekFilter extends AbstractFilterModule
 {
     private readonly sessionPromise: Promise<any>;
     private readonly maxPhotos: number;
