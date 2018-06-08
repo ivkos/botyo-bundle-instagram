@@ -42,7 +42,7 @@ export default class InstagramSneakPeekFilter extends AbstractFilterModule
             .then(session => { theSession = session })
             .then(() => Bluebird.resolve(Instagram.Account.searchForUser(theSession, username)))
             .then(user => new Instagram.Feed.UserMedia(theSession, user.id).get())
-            .then(media => {
+            .then((media: any) => {
                 if (!media || media.length === 0) return;
 
                 const numberOfPhotos = Math.min(this.maxPhotos, media.length);
@@ -55,9 +55,9 @@ export default class InstagramSneakPeekFilter extends AbstractFilterModule
                 return this.getRuntime().getChatApi().sendMessage(msg.threadID, {
                     body: `Here's a sneak peek of @${username}`,
                     attachment: urls.map(InstagramSneakPeekFilter.createStreamForUrl)
-                });
+                }) as any;
             })
-            .catch(err => {
+            .catch((err: any) => {
                 this.getRuntime().getLogger().error(err);
             });
 
