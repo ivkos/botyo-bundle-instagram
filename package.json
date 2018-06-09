@@ -1,6 +1,6 @@
 {
   "name": "botyo-bundle-instagram",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "description": "Instagram Bundle for Botyo",
   "keywords": [
     "botyo",
@@ -34,7 +34,7 @@
     "bluebird": "^3.5.1",
     "botyo-api": "^2.0.1",
     "find-hashtags": "^1.0.1",
-    "instagram-private-api": "^0.6.7",
+    "instagram-private-api": "^0.6.8",
     "request": "^2.87.0"
   },
   "devDependencies": {

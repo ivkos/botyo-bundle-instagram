@@ -1,10 +1,6 @@
 import { AbstractFilterModule, Message } from "botyo-api";
 import InstagramUtils from "../util/InstagramUtils";
 import * as Bluebird from "bluebird";
-import * as request from "request";
-import DuplexThrough from "../util/DuplexThrough";
-import * as url from "url";
-import { Readable } from "stream";
 
 const Instagram = require('instagram-private-api').V1;
 
@@ -49,12 +45,12 @@ export default class InstagramSneakPeekFilter extends AbstractFilterModule
 
                 let urls = [];
                 for (let i = 0; i < numberOfPhotos; i++) {
-                    urls.push(media[i].params.images[0].url); // 0=full size, 1=smaller img
+                    urls.push(InstagramUtils.getUrlOfBiggestImage(media[i].params.images));
                 }
 
                 return this.getRuntime().getChatApi().sendMessage(msg.threadID, {
                     body: `Here's a sneak peek of @${username}`,
-                    attachment: urls.map(InstagramSneakPeekFilter.createStreamForUrl)
+                    attachment: urls.map(InstagramUtils.createStreamForUrl)
                 }) as any;
             })
             .catch((err: any) => {
@@ -62,20 +58,6 @@ export default class InstagramSneakPeekFilter extends AbstractFilterModule
             });
 
         return msg;
-    }
-
-    private static createStreamForUrl(theUrl: string): Readable
-    {
-        const dt = new DuplexThrough({ highWaterMark: 64 * 1024 });
-
-        // Hack alert! Trick request into thinking this is a stream created by fs.createReadStream
-        // so that it guesses the mime-type by the pathname.
-        (dt as any).path = url.parse(theUrl).pathname;
-        (dt as any).mode = 1; // doesn't really matter
-
-        request.get(theUrl).pipe(dt);
-
-        return dt;
     }
 
     static readonly REGEX_URL =

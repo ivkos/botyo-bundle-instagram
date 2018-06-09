@@ -52,7 +52,7 @@ export default class InstagramCommand extends AbstractCommandModule
         if (username !== undefined && hashtag === undefined) {
             return Bluebird.resolve(this
                 .getPhotoUrlByUsername(username, latest))
-                .then(url => chatApi.sendMessage(msg.threadID, { url: url }))
+                .then(url => chatApi.sendMessage(msg.threadID, { attachment: InstagramUtils.createStreamForUrl(url) }))
                 .catch(Instagram.Exceptions.IGAccountNotFoundError,
                     () => chatApi.sendMessage(msg.threadID, "No such Instagram user."))
                 .catch(Instagram.Exceptions.PrivateUserError,
@@ -64,7 +64,7 @@ export default class InstagramCommand extends AbstractCommandModule
         if (hashtag !== undefined && username === undefined) {
             return Bluebird.resolve(this
                 .getPhotoUrlByHashtag(hashtag, latest))
-                .then(url => chatApi.sendMessage(msg.threadID, { url: url }))
+                .then(url => chatApi.sendMessage(msg.threadID, { attachment: InstagramUtils.createStreamForUrl(url) }))
                 .catch(EmptyResultsError, () => chatApi.sendMessage(msg.threadID, `@${username} has no photos`));
         }
 
@@ -78,7 +78,7 @@ export default class InstagramCommand extends AbstractCommandModule
 
         if (media && media.length > 0) {
             const photo = InstagramCommand.pick<any>(media, latest);
-            return photo.params.webLink;
+            return InstagramUtils.getUrlOfBiggestImage(photo.params.images);
         }
 
         throw new EmptyResultsError();
@@ -93,7 +93,7 @@ export default class InstagramCommand extends AbstractCommandModule
 
         if (media && media.length > 0) {
             const photo = InstagramCommand.pick<any>(media, latest);
-            return photo.params.webLink;
+            return InstagramUtils.getUrlOfBiggestImage(photo.params.images);
         }
 
         throw new EmptyResultsError();
