@@ -1,11 +1,13 @@
+import * as Bluebird from "bluebird";
 import { AbstractFilterModule, Message } from "botyo-api";
 import InstagramUtils from "../util/InstagramUtils";
-import * as Bluebird from "bluebird";
 
-const Instagram = require('instagram-private-api').V1;
+const Instagram = require("instagram-private-api").V1;
 
 export default class InstagramSneakPeekFilter extends AbstractFilterModule
 {
+    static readonly REGEX_URL =
+        /instagram\.com\/([A-Za-z0-9_](?:(?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}(?:[A-Za-z0-9_]))?)/;
     private readonly sessionPromise: Promise<any>;
     private readonly maxPhotos: number;
 
@@ -38,14 +40,14 @@ export default class InstagramSneakPeekFilter extends AbstractFilterModule
             .then(session => { theSession = session })
             .then(() => Bluebird.resolve(Instagram.Account.searchForUser(theSession, username)))
             .then(user => new Instagram.Feed.UserMedia(theSession, user.id).get())
-            .then((media: any) => {
-                if (!media || media.length === 0) return;
+            .then((userMediaList: any) => {
+                if (!userMediaList || userMediaList.length === 0) return;
 
-                const numberOfPhotos = Math.min(this.maxPhotos, media.length);
+                const numberOfPhotos = Math.min(this.maxPhotos, userMediaList.length);
 
-                let urls = [];
+                const urls: string[] = [];
                 for (let i = 0; i < numberOfPhotos; i++) {
-                    urls.push(InstagramUtils.getUrlOfBiggestImage(media[i].params.images));
+                    urls.push(...InstagramUtils.getAssetUrlsOfMedia(userMediaList[i]));
                 }
 
                 return this.getRuntime().getChatApi().sendMessage(msg.threadID, {
@@ -59,7 +61,4 @@ export default class InstagramSneakPeekFilter extends AbstractFilterModule
 
         return msg;
     }
-
-    static readonly REGEX_URL =
-        /instagram\.com\/([A-Za-z0-9_](?:(?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}(?:[A-Za-z0-9_]))?)/;
 }

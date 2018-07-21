@@ -1,12 +1,15 @@
+import * as Bluebird from "bluebird";
 import { AbstractCommandModule, Message } from "botyo-api";
 import InstagramUtils from "../util/InstagramUtils";
-import * as Bluebird from "bluebird";
 
-const Instagram = require('instagram-private-api').V1;
+const Instagram = require("instagram-private-api").V1;
 const findHashtags = require("find-hashtags");
 
 export default class InstagramCommand extends AbstractCommandModule
 {
+    // http://blog.jstassen.com/2016/03/code-regex-for-instagram-username-and-hashtags/
+    static readonly REGEX_USERNAME =
+        /(?:@)([A-Za-z0-9_](?:(?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}(?:[A-Za-z0-9_]))?)/;
     private sessionPromise: Promise<any>;
 
     constructor()
@@ -42,7 +45,7 @@ export default class InstagramCommand extends AbstractCommandModule
 
     async execute(msg: Message, args: string): Promise<any>
     {
-        const latest = args.startsWith("latest");
+        const isLatest = args.startsWith("latest");
 
         const username = InstagramCommand.parseUsername(args);
         const hashtag = InstagramCommand.parseHashtag(args);
@@ -51,8 +54,10 @@ export default class InstagramCommand extends AbstractCommandModule
 
         if (username !== undefined && hashtag === undefined) {
             return Bluebird.resolve(this
-                .getPhotoUrlByUsername(username, latest))
-                .then(url => chatApi.sendMessage(msg.threadID, { attachment: InstagramUtils.createStreamForUrl(url) }))
+                .getAssetUrlsOfMediaByUsername(username, isLatest))
+                .then(urls => chatApi.sendMessage(msg.threadID, {
+                    attachment: urls.map(InstagramUtils.createStreamForUrl)
+                }))
                 .catch(Instagram.Exceptions.IGAccountNotFoundError,
                     () => chatApi.sendMessage(msg.threadID, "No such Instagram user."))
                 .catch(Instagram.Exceptions.PrivateUserError,
@@ -63,40 +68,39 @@ export default class InstagramCommand extends AbstractCommandModule
 
         if (hashtag !== undefined && username === undefined) {
             return Bluebird.resolve(this
-                .getPhotoUrlByHashtag(hashtag, latest))
-                .then(url => chatApi.sendMessage(msg.threadID, { attachment: InstagramUtils.createStreamForUrl(url) }))
+                .getAssetUrlsOfMediaByHashtag(hashtag, isLatest))
+                .then(urls => chatApi.sendMessage(msg.threadID, {
+                    attachment: urls.map(InstagramUtils.createStreamForUrl)
+                }))
                 .catch(EmptyResultsError, () => chatApi.sendMessage(msg.threadID, `@${username} has no photos`));
         }
 
         throw new Error("Illegal state.");
     }
 
-    private async getPhotoUrlByHashtag(hashtag: string, latest: boolean): Promise<string>
+    private async getAssetUrlsOfMediaByHashtag(hashtag: string, isLatest: boolean): Promise<string[]>
     {
         const session = await this.sessionPromise;
-        const media = await new Instagram.Feed.TaggedMedia(session, hashtag).get();
 
-        if (media && media.length > 0) {
-            const photo = InstagramCommand.pick<any>(media, latest);
-            return InstagramUtils.getUrlOfBiggestImage(photo.params.images);
-        }
+        const mediaList = await new Instagram.Feed.TaggedMedia(session, hashtag).get();
+        if (!mediaList || mediaList.length === 0) throw new EmptyResultsError();
 
-        throw new EmptyResultsError();
+        const media = InstagramCommand.pick<any>(mediaList, isLatest);
+
+        return InstagramUtils.getAssetUrlsOfMedia(media);
     }
 
-    private async getPhotoUrlByUsername(username: string, latest: boolean): Promise<string>
+    private async getAssetUrlsOfMediaByUsername(username: string, isLatest: boolean): Promise<string[]>
     {
         const session = await this.sessionPromise;
         const user = await this.getUserByUsernameOrCloseEnough(username);
 
-        const media = await new Instagram.Feed.UserMedia(session, user.id).get();
+        const mediaList = await new Instagram.Feed.UserMedia(session, user.id).get();
+        if (!mediaList || mediaList.length === 0) throw new EmptyResultsError();
 
-        if (media && media.length > 0) {
-            const photo = InstagramCommand.pick<any>(media, latest);
-            return InstagramUtils.getUrlOfBiggestImage(photo.params.images);
-        }
+        const media = InstagramCommand.pick<any>(mediaList, isLatest);
 
-        throw new EmptyResultsError();
+        return InstagramUtils.getAssetUrlsOfMedia(media);
     }
 
     private async getUserByUsernameOrCloseEnough(username: string): Promise<any>
@@ -135,10 +139,6 @@ export default class InstagramCommand extends AbstractCommandModule
 
         return hashtags[0];
     }
-
-    // http://blog.jstassen.com/2016/03/code-regex-for-instagram-username-and-hashtags/
-    static readonly REGEX_USERNAME =
-        /(?:@)([A-Za-z0-9_](?:(?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}(?:[A-Za-z0-9_]))?)/;
 }
 
 class EmptyResultsError extends Error

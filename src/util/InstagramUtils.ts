@@ -1,13 +1,13 @@
 import { ApplicationConfiguration, ModuleConfiguration } from "botyo-api";
+import * as request from "request";
+import { Readable } from "stream";
+import * as url from "url";
 import InstagramCommand from "../modules/InstagramCommand";
 import InstagramSneakPeekFilter from "../modules/InstagramSneakPeekFilter";
-import * as url from "url";
-import { Readable } from "stream";
 import DuplexThrough from "./DuplexThrough";
-import * as request from "request";
 
 
-const Instagram = require('instagram-private-api').V1;
+const Instagram = require("instagram-private-api").V1;
 
 namespace InstagramUtils
 {
@@ -67,10 +67,41 @@ namespace InstagramUtils
         return dt;
     }
 
-    export function getUrlOfBiggestImage(images: { width: number, height: number, url: string }[]): string
+    export function getAssetUrlsOfMedia(media: any): string[]
     {
-        const sorted = images.sort((img1, img2) => (img2.width * img2.height) - (img1.width * img1.height));
+        const urls: string[] = [];
 
+        // This is needed because instagram-private-api has a bug that mutates
+        // internal data structures when calling `media.params` multiple times
+        const mediaParams = media.params;
+
+        if (mediaParams.carouselMedia && mediaParams.carouselMedia.length > 0) {
+            // This post has multiple photos/videos
+            for (const m of mediaParams.carouselMedia) {
+                urls.push(getAssetUrlOfSingleMedia(m));
+            }
+        } else {
+            // This is a single photo/video
+            urls.push(getAssetUrlOfSingleMedia(mediaParams));
+        }
+
+        return urls;
+    }
+
+    function getAssetUrlOfSingleMedia(media: any): string
+    {
+        const root = media.params || media; // some media contain their useful info in params prop
+
+        if (root.videos && root.videos.length > 0) {
+            return getUrlOfBiggestAsset(root.videos); // this exists only for videos
+        } else {
+            return getUrlOfBiggestAsset(root.images); // this exists for photos AND videos
+        }
+    }
+
+    function getUrlOfBiggestAsset(imagesOrVideosObj: { width: number, height: number, url: string }[]): string
+    {
+        const sorted = imagesOrVideosObj.sort((img1, img2) => (img2.width * img2.height) - (img1.width * img1.height));
         return sorted[0].url;
     }
 }
